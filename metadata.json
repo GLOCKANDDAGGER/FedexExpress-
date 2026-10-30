@@ -1,0 +1,8 @@
+{
+  "name": "FedexExpress Logistics",
+  "description": "Enterprise-grade express courier and parcel tracking platform featuring real-time package tracking, instant rate calculation, shipping label generator, and pickup scheduling.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

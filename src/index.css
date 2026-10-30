@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --fedex-purple: #4D148C;
+    --fedex-orange: #FF6200;
+    --fedex-green: #008A00;
+    --fedex-red: #DD1E25;
+    --fedex-cyan: #00A3E0;
+    --fedex-dark: #2A2A2A;
+    --fedex-gray: #F2F2F2;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: #333333;
+    background-color: #f7f7f7;
+  }
+  
+  code, kbd, samp, pre, .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+}
+
+/* Custom utility classes for authentic FedEx branding */
+.bg-fedex-purple { background-color: #4D148C; }
+.text-fedex-purple { color: #4D148C; }
+.border-fedex-purple { border-color: #4D148C; }
+
+.bg-fedex-orange { background-color: #FF6200; }
+.text-fedex-orange { color: #FF6200; }
+.border-fedex-orange { border-color: #FF6200; }
+.hover\:bg-fedex-orange-hover:hover { background-color: #E05600; }
+
+.bg-fedex-green { background-color: #008A00; }
+.text-fedex-green { color: #008A00; }
+
+.bg-fedex-gray { background-color: #F2F2F2; }
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+}
