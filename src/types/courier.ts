@@ -69,6 +69,8 @@ export interface ProofOfDelivery {
   timestamp: string;
   locationDescription: string;
   signatureSvgDataUrl?: string;
+  proofPhotoUrl?: string;
+  deliveryCoords?: { lat: number; lng: number };
 }
 
 export interface Shipment {
@@ -88,6 +90,7 @@ export interface Shipment {
   shippingCharge: number;
   deliveryInstructions?: string;
   packageDescription?: string;
+  heroStatus?: 'DELIVERED' | 'ON TIME' | 'PENDING' | 'EXCEPTION';
 }
 
 export interface RateQuote {

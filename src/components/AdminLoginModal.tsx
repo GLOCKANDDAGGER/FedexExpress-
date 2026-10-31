@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Lock, ShieldCheck, AlertCircle, ArrowRight } from 'lucide-react';
+import { X, AlertCircle, ArrowRight } from 'lucide-react';
 import { FedExLogo } from './FedExLogo';
 
 interface AdminLoginModalProps {
@@ -38,12 +38,6 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
         setError('Invalid administrator credentials. Please check your username and password.');
       }
     }, 400);
-  };
-
-  const handleFillDemo = () => {
-    setUsername('admin');
-    setPassword('pas123');
-    setError('');
   };
 
   return (
@@ -127,21 +121,6 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
                   <ArrowRight className="w-4 h-4 stroke-[3]" />
                 </>
               )}
-            </button>
-          </div>
-
-          {/* Quick Credential Test Helper for smooth review */}
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-            <div className="flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Admin: <strong className="text-slate-800">admin</strong> / <strong className="text-slate-800">pas123</strong></span>
-            </div>
-            <button
-              type="button"
-              onClick={handleFillDemo}
-              className="font-bold text-[#4D148C] hover:underline cursor-pointer"
-            >
-              Auto-fill Credentials
             </button>
           </div>
         </form>

@@ -21,6 +21,7 @@ import {
   Download,
   Filter,
   ArrowLeft,
+  Printer,
 } from 'lucide-react';
 import { Shipment, ServiceCode, ShipmentStatus, TrackingCheckpoint } from '../types/courier';
 import { saveShipmentToStorage, deleteStoredShipment } from '../data/mockShipments';
@@ -42,6 +43,7 @@ interface AdminPanelProps {
   onLogout: () => void;
   onExitToWebsite: () => void;
   onSelectTracking?: (trackingNum: string) => void;
+  onPrintLabel?: (shipment: Shipment) => void;
 }
 
 // Initial realistic admin operational logs
@@ -148,6 +150,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onLogout,
   onExitToWebsite,
   onSelectTracking,
+  onPrintLabel,
 }) => {
   const [adminTab, setAdminTab] = useState<'logs' | 'generator' | 'registry'>('logs');
   const [logs, setLogs] = useState<AdminLogEntry[]>(INITIAL_LOGS);
@@ -169,27 +172,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [statusMessage, setStatusMessage] = useState('In transit - Sorted at Memphis World Hub');
   const [estimatedDelivery, setEstimatedDelivery] = useState('Tomorrow by 10:30 AM');
 
-  // Sender
-  const [senderName, setSenderName] = useState(SAMPLE_SENDERS[0].name);
-  const [senderCompany, setSenderCompany] = useState(SAMPLE_SENDERS[0].company);
-  const [senderAddress, setSenderAddress] = useState(SAMPLE_SENDERS[0].address);
-  const [senderCity, setSenderCity] = useState(SAMPLE_SENDERS[0].city);
-  const [senderState, setSenderState] = useState(SAMPLE_SENDERS[0].state);
-  const [senderZip, setSenderZip] = useState(SAMPLE_SENDERS[0].zip);
-  const [senderPhone, setSenderPhone] = useState(SAMPLE_SENDERS[0].phone);
+  // Sender (Initial state empty, highlighted with clue placeholders)
+  const [senderName, setSenderName] = useState('');
+  const [senderCompany, setSenderCompany] = useState('');
+  const [senderAddress, setSenderAddress] = useState('');
+  const [senderCity, setSenderCity] = useState('');
+  const [senderState, setSenderState] = useState('');
+  const [senderZip, setSenderZip] = useState('');
+  const [senderPhone, setSenderPhone] = useState('');
 
-  // Recipient
-  const [recipientName, setRecipientName] = useState(SAMPLE_RECIPIENTS[0].name);
-  const [recipientCompany, setRecipientCompany] = useState(SAMPLE_RECIPIENTS[0].company);
-  const [recipientAddress, setRecipientAddress] = useState(SAMPLE_RECIPIENTS[0].address);
-  const [recipientCity, setRecipientCity] = useState(SAMPLE_RECIPIENTS[0].city);
-  const [recipientState, setRecipientState] = useState(SAMPLE_RECIPIENTS[0].state);
-  const [recipientZip, setRecipientZip] = useState(SAMPLE_RECIPIENTS[0].zip);
-  const [recipientPhone, setRecipientPhone] = useState(SAMPLE_RECIPIENTS[0].phone);
+  // Recipient (Initial state empty, highlighted with clue placeholders)
+  const [recipientName, setRecipientName] = useState('');
+  const [recipientCompany, setRecipientCompany] = useState('');
+  const [recipientAddress, setRecipientAddress] = useState('');
+  const [recipientCity, setRecipientCity] = useState('');
+  const [recipientState, setRecipientState] = useState('');
+  const [recipientZip, setRecipientZip] = useState('');
+  const [recipientPhone, setRecipientPhone] = useState('');
   const [isResidential, setIsResidential] = useState(false);
 
-  // Package Metadata
-  const [packageDescription, setPackageDescription] = useState('Clinical Diagnostics Assay Kits & Laboratory Reagent Assays');
+  // Package Metadata (Initial state empty, highlighted with clue placeholders)
+  const [packageDescription, setPackageDescription] = useState('');
   const [weight, setWeight] = useState(5.4);
   const [length, setLength] = useState(12);
   const [width, setWidth] = useState(10);
@@ -240,23 +243,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setStatusMessage(`In transit - Package scanned at FedEx Regional Sort Facility in ${randomSender.city}`);
     setEstimatedDelivery('Tomorrow by 10:30 AM');
 
-    setSenderName(randomSender.name);
-    setSenderCompany(randomSender.company);
-    setSenderAddress(randomSender.address);
-    setSenderCity(randomSender.city);
-    setSenderState(randomSender.state);
-    setSenderZip(randomSender.zip);
-    setSenderPhone(randomSender.phone);
+    // Sender fields left unfilled, highlighted with clue placeholders
+    setSenderName('');
+    setSenderCompany('');
+    setSenderAddress('');
+    setSenderCity('');
+    setSenderState('');
+    setSenderZip('');
+    setSenderPhone('');
 
-    setRecipientName(randomRecipient.name);
-    setRecipientCompany(randomRecipient.company);
-    setRecipientAddress(randomRecipient.address);
-    setRecipientCity(randomRecipient.city);
-    setRecipientState(randomRecipient.state);
-    setRecipientZip(randomRecipient.zip);
-    setRecipientPhone(randomRecipient.phone);
+    // Recipient fields left unfilled, highlighted with clue placeholders
+    setRecipientName('');
+    setRecipientCompany('');
+    setRecipientAddress('');
+    setRecipientCity('');
+    setRecipientState('');
+    setRecipientZip('');
+    setRecipientPhone('');
 
-    setPackageDescription(randomDesc);
+    // Package description left unfilled, highlighted with clue placeholders
+    setPackageDescription('');
     setWeight(randomWeight);
     setLength(randomDim[0]);
     setWidth(randomDim[1]);
@@ -266,8 +272,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setSignatureRequired('Direct Signature Required');
     setDeliveryInstructions('Deliver to reception desk or loading dock');
 
-    addLog('INFO', 'DRAFT_SHIPMENT_GENERATED', `Generated draft shipment ${newTracking} for ${randomRecipient.name}`, newTracking);
-    showFeedback(`Generated new random draft shipment: ${newTracking}`);
+    addLog('INFO', 'DRAFT_SHIPMENT_GENERATED', `Generated draft airbill ${newTracking}. Sender, recipient & cargo fields cleared for operator entry.`, newTracking);
+    showFeedback(`Generated new draft ${newTracking}. Sender, recipient & package description are ready to fill.`);
   };
 
   // Save / Publish Draft to live system
@@ -490,7 +496,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           }`}
         >
           <Package className="w-4 h-4 text-[#FF6200]" />
-          <span>Database Registry ({shipments.length})</span>
+          <span>Recent Shipment Records (My Shipments) ({shipments.length})</span>
         </button>
       </div>
 
@@ -697,199 +703,247 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </div>
             </div>
 
-            {/* Addresses Grid */}
+            {/* Addresses Grid - Highlighted with Clues */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Sender */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
-                  <MapPin className="w-4 h-4 text-[#4D148C]" />
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-[#4D148C]">
-                    Sender Information
-                  </h4>
+              {/* Sender - Highlighted with Clue Prompts */}
+              <div className="space-y-4 p-5 rounded-2xl border-2 border-purple-300 bg-purple-50/20 shadow-xs ring-2 ring-purple-100/60">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-purple-200">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-[#4D148C]" />
+                    <h4 className="font-black text-xs uppercase tracking-wider text-[#4D148C]">
+                      Sender Information
+                    </h4>
+                  </div>
+                  <span className="text-[10px] font-bold text-[#4D148C] bg-purple-100/90 px-2 py-0.5 rounded-full inline-flex items-center gap-1 shrink-0">
+                    💡 Clue: Enter origin shipper & dock address
+                  </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">Sender Name</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Sender Name <span className="text-purple-600">*</span>
+                    </label>
                     <input
                       type="text"
                       required
                       value={senderName}
                       onChange={(e) => setSenderName(e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg"
+                      placeholder="e.g. Daniella Lam (Full Shipper Name)"
+                      className="w-full px-3 py-2 text-xs border border-purple-300 rounded-lg bg-white placeholder:text-slate-400 placeholder:italic focus:border-[#4D148C] focus:ring-2 focus:ring-[#4D148C]/20 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">Company</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Company / Organization</label>
                     <input
                       type="text"
                       value={senderCompany}
                       onChange={(e) => setSenderCompany(e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg"
+                      placeholder="e.g. Lam Diagnostics & Bioresearch"
+                      className="w-full px-3 py-2 text-xs border border-purple-300 rounded-lg bg-white placeholder:text-slate-400 placeholder:italic focus:border-[#4D148C] focus:ring-2 focus:ring-[#4D148C]/20 focus:outline-none"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">Street Address</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Street Address <span className="text-purple-600">*</span>
+                  </label>
                   <input
                     type="text"
                     required
                     value={senderAddress}
                     onChange={(e) => setSenderAddress(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg"
+                    placeholder="e.g. 742 Evergreen Terrace, Suite 400"
+                    className="w-full px-3 py-2 text-xs border border-purple-300 rounded-lg bg-white placeholder:text-slate-400 placeholder:italic focus:border-[#4D148C] focus:ring-2 focus:ring-[#4D148C]/20 focus:outline-none"
                   />
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">City</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      City <span className="text-purple-600">*</span>
+                    </label>
                     <input
                       type="text"
                       required
                       value={senderCity}
                       onChange={(e) => setSenderCity(e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg"
+                      placeholder="e.g. Springfield"
+                      className="w-full px-3 py-2 text-xs border border-purple-300 rounded-lg bg-white placeholder:text-slate-400 placeholder:italic focus:border-[#4D148C] focus:ring-2 focus:ring-[#4D148C]/20 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">State</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      State <span className="text-purple-600">*</span>
+                    </label>
                     <input
                       type="text"
                       required
                       maxLength={2}
                       value={senderState}
                       onChange={(e) => setSenderState(e.target.value.toUpperCase())}
-                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg uppercase font-mono"
+                      placeholder="OR"
+                      className="w-full px-3 py-2 text-xs border border-purple-300 rounded-lg uppercase font-mono bg-white placeholder:text-slate-400 placeholder:italic focus:border-[#4D148C] focus:ring-2 focus:ring-[#4D148C]/20 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">ZIP</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      ZIP <span className="text-purple-600">*</span>
+                    </label>
                     <input
                       type="text"
                       required
                       value={senderZip}
                       onChange={(e) => setSenderZip(e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg font-mono"
+                      placeholder="97477"
+                      className="w-full px-3 py-2 text-xs border border-purple-300 rounded-lg font-mono bg-white placeholder:text-slate-400 placeholder:italic focus:border-[#4D148C] focus:ring-2 focus:ring-[#4D148C]/20 focus:outline-none"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">Phone</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Contact Phone</label>
                   <input
                     type="text"
                     value={senderPhone}
                     onChange={(e) => setSenderPhone(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg font-mono"
+                    placeholder="e.g. (541) 555-0199"
+                    className="w-full px-3 py-2 text-xs border border-purple-300 rounded-lg font-mono bg-white placeholder:text-slate-400 placeholder:italic focus:border-[#4D148C] focus:ring-2 focus:ring-[#4D148C]/20 focus:outline-none"
                   />
                 </div>
               </div>
 
-              {/* Recipient */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
-                  <MapPin className="w-4 h-4 text-[#FF6200]" />
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-[#FF6200]">
-                    Recipient Information
-                  </h4>
+              {/* Recipient - Highlighted with Clue Prompts */}
+              <div className="space-y-4 p-5 rounded-2xl border-2 border-orange-300 bg-orange-50/20 shadow-xs ring-2 ring-orange-100/60">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-orange-200">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-[#FF6200]" />
+                    <h4 className="font-black text-xs uppercase tracking-wider text-[#FF6200]">
+                      Recipient Information
+                    </h4>
+                  </div>
+                  <span className="text-[10px] font-bold text-[#FF6200] bg-orange-100/90 px-2 py-0.5 rounded-full inline-flex items-center gap-1 shrink-0">
+                    💡 Clue: Enter consignee receiver & delivery address
+                  </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">Recipient Name</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Recipient Name <span className="text-orange-600">*</span>
+                    </label>
                     <input
                       type="text"
                       required
                       value={recipientName}
                       onChange={(e) => setRecipientName(e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg"
+                      placeholder="e.g. Dr. Marcus Vance (Consignee Name)"
+                      className="w-full px-3 py-2 text-xs border border-orange-300 rounded-lg bg-white placeholder:text-slate-400 placeholder:italic focus:border-[#FF6200] focus:ring-2 focus:ring-[#FF6200]/20 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">Company</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Company / Department</label>
                     <input
                       type="text"
                       value={recipientCompany}
                       onChange={(e) => setRecipientCompany(e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg"
+                      placeholder="e.g. Northwestern Medical Research"
+                      className="w-full px-3 py-2 text-xs border border-orange-300 rounded-lg bg-white placeholder:text-slate-400 placeholder:italic focus:border-[#FF6200] focus:ring-2 focus:ring-[#FF6200]/20 focus:outline-none"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">Street Address</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Street Address <span className="text-orange-600">*</span>
+                  </label>
                   <input
                     type="text"
                     required
                     value={recipientAddress}
                     onChange={(e) => setRecipientAddress(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg"
+                    placeholder="e.g. 710 N Lake Shore Drive, Floor 4"
+                    className="w-full px-3 py-2 text-xs border border-orange-300 rounded-lg bg-white placeholder:text-slate-400 placeholder:italic focus:border-[#FF6200] focus:ring-2 focus:ring-[#FF6200]/20 focus:outline-none"
                   />
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">City</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      City <span className="text-orange-600">*</span>
+                    </label>
                     <input
                       type="text"
                       required
                       value={recipientCity}
                       onChange={(e) => setRecipientCity(e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg"
+                      placeholder="e.g. Chicago"
+                      className="w-full px-3 py-2 text-xs border border-orange-300 rounded-lg bg-white placeholder:text-slate-400 placeholder:italic focus:border-[#FF6200] focus:ring-2 focus:ring-[#FF6200]/20 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">State</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      State <span className="text-orange-600">*</span>
+                    </label>
                     <input
                       type="text"
                       required
                       maxLength={2}
                       value={recipientState}
                       onChange={(e) => setRecipientState(e.target.value.toUpperCase())}
-                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg uppercase font-mono"
+                      placeholder="IL"
+                      className="w-full px-3 py-2 text-xs border border-orange-300 rounded-lg uppercase font-mono bg-white placeholder:text-slate-400 placeholder:italic focus:border-[#FF6200] focus:ring-2 focus:ring-[#FF6200]/20 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">ZIP</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      ZIP <span className="text-orange-600">*</span>
+                    </label>
                     <input
                       type="text"
                       required
                       value={recipientZip}
                       onChange={(e) => setRecipientZip(e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg font-mono"
+                      placeholder="60611"
+                      className="w-full px-3 py-2 text-xs border border-orange-300 rounded-lg font-mono bg-white placeholder:text-slate-400 placeholder:italic focus:border-[#FF6200] focus:ring-2 focus:ring-[#FF6200]/20 focus:outline-none"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">Phone</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Phone</label>
                   <input
                     type="text"
                     value={recipientPhone}
                     onChange={(e) => setRecipientPhone(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg font-mono"
+                    placeholder="e.g. (312) 555-0899"
+                    className="w-full px-3 py-2 text-xs border border-orange-300 rounded-lg font-mono bg-white placeholder:text-slate-400 placeholder:italic focus:border-[#FF6200] focus:ring-2 focus:ring-[#FF6200]/20 focus:outline-none"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Package Description / Commodity Content */}
-            <div className="p-4 bg-purple-50/60 rounded-xl border border-purple-200">
-              <label className="block text-xs font-black text-[#4D148C] uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                <span>Package Description & Commodity Contents</span>
-                <span className="text-[10px] text-[#4D148C]/70 font-semibold">Editable Cargo Details</span>
-              </label>
+            {/* Package Description / Commodity Content - Highlighted with Clues */}
+            <div className="p-5 bg-purple-50/70 rounded-2xl border-2 border-purple-400 shadow-xs ring-2 ring-purple-100/70 space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <label className="block text-xs font-black text-[#4D148C] uppercase tracking-wider">
+                  Package Description & Commodity Contents <span className="text-purple-600">*</span>
+                </label>
+                <span className="text-[10px] font-bold text-[#4D148C] bg-purple-200/80 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
+                  💡 Clue: Enter detailed commodity contents & material classification
+                </span>
+              </div>
               <textarea
-                rows={2}
+                rows={3}
                 required
                 value={packageDescription}
                 onChange={(e) => setPackageDescription(e.target.value)}
-                placeholder="e.g. Clinical Diagnostics Assay Kits, Semiconductor components, Legal contracts..."
-                className="w-full px-3.5 py-2.5 text-xs font-semibold bg-white border border-slate-300 rounded-lg focus:border-[#4D148C] focus:outline-none"
+                placeholder="Clue: e.g. Clinical Diagnostics Assay Kits & Laboratory Reagent Assays, Precision Laser Optical Sensors, Temperature-Monitored Biopharmaceutical Research Cell Cultures (2°C - 8°C)..."
+                className="w-full px-3.5 py-2.5 text-xs font-medium bg-white border border-purple-300 rounded-xl placeholder:text-slate-400 placeholder:italic focus:border-[#4D148C] focus:ring-2 focus:ring-[#4D148C]/20 focus:outline-none leading-relaxed"
               />
               <p className="text-[11px] text-slate-500 mt-1">
-                Enter precise commodity or cargo descriptions for transport documentation, security manifest, and customs inspection.
+                Notice: All transport documentation, tarmac security manifests, and international tariff filings are calibrated against this field.
               </p>
             </div>
 
@@ -975,84 +1029,126 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       )}
 
-      {/* TAB 3: DATABASE REGISTRY */}
+      {/* TAB 3: RECENT SHIPMENT RECORDS (MY SHIPMENTS LEDGER) */}
       {adminTab === 'registry' && (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
             <div>
-              <h3 className="text-base font-black text-slate-900">
-                Live Shipments Registry ({shipments.length})
-              </h3>
+              <div className="flex items-center gap-2">
+                <Package className="w-5 h-5 text-[#FF6200]" />
+                <h3 className="text-lg font-black text-slate-900 tracking-tight">
+                  Recent Shipment Records & Ledger ({shipments.length})
+                </h3>
+              </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Active parcel records stored in the operational tracking database.
+                Internal consignments ledger. Tracking data, destination routes, and carrier print bills.
               </p>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setAdminTab('generator')}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#FF6200] hover:bg-[#E05600] text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-sm cursor-pointer shrink-0"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>Create New Shipment</span>
+            </button>
           </div>
 
           <div className="overflow-x-auto border border-slate-200 rounded-xl">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 font-bold text-slate-600 uppercase tracking-wider">
-                  <th className="py-3 px-4">Tracking ID</th>
-                  <th className="py-3 px-4">Service</th>
-                  <th className="py-3 px-4">From &rarr; To</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                  <th className="py-3.5 px-4">Tracking ID & Ref</th>
+                  <th className="py-3.5 px-4">Service & Cargo Details</th>
+                  <th className="py-3.5 px-4">Shipper & Recipient</th>
+                  <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {shipments.map((s) => (
                   <tr key={s.trackingNumber} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3.5 px-4">
-                      <div className="font-mono font-black text-slate-900">{s.trackingNumber}</div>
-                      {s.sender?.name && (
-                        <div className="text-[10px] text-slate-500 font-sans mt-0.5">
-                          Shipper: <span className="font-semibold text-slate-800">{s.sender.name}</span>
-                        </div>
-                      )}
+                    <td className="py-3.5 px-4 align-top">
+                      <div className="font-mono font-black text-slate-900 text-sm">{s.trackingNumber}</div>
+                      <div className="text-[10px] text-slate-400 font-mono mt-0.5 flex items-center gap-1">
+                        <Shield className="w-3 h-3 text-slate-400" />
+                        <span>Private Consignment</span>
+                      </div>
+                      <div className="text-[10px] text-slate-500 mt-1">
+                        Created: <span className="font-semibold text-slate-700">{s.createdAt}</span>
+                      </div>
                     </td>
-                    <td className="py-3.5 px-4 text-slate-700 font-medium">
-                      <div>{s.serviceName}</div>
+
+                    <td className="py-3.5 px-4 align-top text-slate-700 font-medium">
+                      <div className="font-bold text-slate-900">{s.serviceName}</div>
+                      <div className="text-[11px] text-slate-600 mt-0.5">
+                        {s.packageDetails.packaging} · {s.packageDetails.weight} {s.packageDetails.weightUnit}
+                      </div>
                       {(s.packageDescription || s.packageDetails.description) && (
-                        <div className="text-[11px] text-[#4D148C] font-semibold mt-0.5 line-clamp-1">
+                        <div className="text-[11px] text-[#4D148C] font-semibold mt-1 p-1.5 bg-purple-50/60 rounded border border-purple-100 line-clamp-2">
                           📦 {s.packageDescription || s.packageDetails.description}
                         </div>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 text-slate-600">
-                      <span>{s.sender.city}, {s.sender.state}</span>
-                      <span className="mx-1 text-slate-400">&rarr;</span>
-                      <span className="font-semibold text-slate-900">{s.recipient.city}, {s.recipient.state}</span>
+
+                    <td className="py-3.5 px-4 align-top text-slate-600">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-slate-400 block">From:</span>
+                        <span className="font-semibold text-slate-900">{s.sender?.name}</span>
+                        {s.sender?.company && <span className="text-slate-500"> ({s.sender.company})</span>}
+                        <div className="text-[11px] text-slate-500">{s.sender.city}, {s.sender.state}</div>
+                      </div>
+                      <div className="mt-2 pt-1 border-t border-slate-100">
+                        <span className="text-[10px] font-bold uppercase text-slate-400 block">To:</span>
+                        <span className="font-semibold text-slate-900">{s.recipient.name}</span>
+                        <div className="text-[11px] text-slate-500">{s.recipient.city}, {s.recipient.state} {s.recipient.postalCode}</div>
+                      </div>
                     </td>
-                    <td className="py-3.5 px-4">
+
+                    <td className="py-3.5 px-4 align-top">
                       <span
-                        className={`px-2 py-0.5 rounded font-bold text-[10px] ${
+                        className={`px-2.5 py-1 rounded font-black text-[10px] uppercase tracking-wider inline-block ${
                           s.status === 'PENDING'
-                            ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                            ? 'bg-amber-50 text-amber-900 border border-amber-300'
                             : s.status === 'DELIVERED'
-                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
                             : 'bg-purple-50 text-[#4D148C] border border-purple-200'
                         }`}
                       >
                         {s.status.replace(/_/g, ' ')}
                       </span>
+                      <div className="text-[10px] text-slate-500 mt-1">
+                        Est: <span className="font-semibold text-slate-700">{s.actualDelivery || s.estimatedDelivery}</span>
+                      </div>
                     </td>
-                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-2">
+
+                    <td className="py-3.5 px-4 align-top text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1.5">
                         {onSelectTracking && (
                           <button
                             type="button"
                             onClick={() => onSelectTracking(s.trackingNumber)}
-                            className="px-2.5 py-1 text-[11px] font-bold text-[#4D148C] hover:bg-purple-50 rounded transition-colors cursor-pointer"
+                            className="px-3 py-1.5 text-xs font-bold text-white bg-[#4D148C] hover:bg-[#3b0f6d] rounded-lg transition-colors cursor-pointer shadow-xs"
                           >
                             Track
+                          </button>
+                        )}
+                        {onPrintLabel && (
+                          <button
+                            type="button"
+                            onClick={() => onPrintLabel(s)}
+                            title="Print Thermal Airbill Label"
+                            className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer border border-slate-200"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
                           </button>
                         )}
                         <button
                           type="button"
                           onClick={() => handleDeleteShipment(s.trackingNumber)}
                           title="Delete shipment"
-                          className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded transition-colors cursor-pointer"
+                          className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-rose-200"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

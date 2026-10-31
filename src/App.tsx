@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Header, ActiveTab } from './components/Header';
 import { TrackingWidget } from './components/TrackingWidget';
 import { TrackingModal } from './components/TrackingModal';
+import { TrackingPageView } from './components/TrackingPageView';
 import { ShippingForm } from './components/ShippingForm';
 import { ShippingLabelModal } from './components/ShippingLabelModal';
 import { RateCalculator } from './components/RateCalculator';
 import { PickupScheduler } from './components/PickupScheduler';
 import { LocationFinder } from './components/LocationFinder';
-import { MyShipments } from './components/MyShipments';
 import { FleetShowcase } from './components/FleetShowcase';
 import { Footer } from './components/Footer';
 import { FedExLogo } from './components/FedExLogo';
@@ -35,13 +35,16 @@ import {
   ArrowRight,
   AlertCircle,
   Sparkles,
-  Camera,
   Layers,
 } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('track');
   const [shipments, setShipments] = useState<Shipment[]>(() => getStoredShipments());
+  const [trackedShipment, setTrackedShipment] = useState<Shipment>(() => {
+    const list = getStoredShipments();
+    return list[0];
+  });
   const [selectedTrackingShipment, setSelectedTrackingShipment] = useState<Shipment | null>(null);
   const [selectedLabelShipment, setSelectedLabelShipment] = useState<Shipment | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -110,7 +113,9 @@ export default function App() {
   const handleTrackSearch = (trackingNum: string) => {
     const found = findShipmentByNumber(trackingNum);
     if (found) {
+      setTrackedShipment(found);
       setSelectedTrackingShipment(found);
+      setActiveTab('track');
       showToast(`Found tracking details for ${found.trackingNumber}`);
     } else {
       const cleanNum = trackingNum.trim().toUpperCase();
@@ -186,7 +191,9 @@ export default function App() {
 
       saveShipmentToStorage(syntheticShipment);
       setShipments(getStoredShipments());
+      setTrackedShipment(syntheticShipment);
       setSelectedTrackingShipment(syntheticShipment);
+      setActiveTab('track');
       showToast(`Loaded tracking history for ${syntheticShipment.trackingNumber}`);
     }
   };
@@ -229,6 +236,7 @@ export default function App() {
               setIsAdminViewActive(false);
               handleTrackSearch(trackingNum);
             }}
+            onPrintLabel={(s) => setSelectedLabelShipment(s)}
           />
         </main>
       ) : (
@@ -328,37 +336,27 @@ export default function App() {
             </div>
           </section>
 
-          {/* FedEx Delivery Manager® Promotional Banner (Houses hidden Admin Entry under Manage Deliveries) */}
-          <section className="bg-white border-b border-slate-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-50 text-[#4D148C] rounded-lg">
-                  <Camera className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="font-black text-[#4D148C] text-sm block">
-                    FedEx Delivery Manager®
-                  </span>
-                  <p className="text-slate-600 mt-0.5">
-                    Customize your home deliveries with picture proof of delivery, holiday vacation holds, and neighbor drops.
-                  </p>
-                </div>
-              </div>
-              {/* Natural looking Manage Deliveries button that routes secretly to Admin */}
-              <button
-                type="button"
-                onClick={handleManageDeliveriesClick}
-                className="px-4 py-2 font-bold text-xs uppercase tracking-wider text-[#4D148C] bg-purple-50 hover:bg-[#4D148C] hover:text-white rounded-lg border border-purple-200 transition-colors cursor-pointer shrink-0"
-              >
-                Manage Deliveries
-              </button>
-            </div>
-          </section>
-
           {/* Main Workspace Body */}
           <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
             {activeTab === 'track' && (
               <div className="space-y-12">
+                {/* Dedicated Tracking Page: Hero Status + Travel History + Action & Evidence Modules */}
+                <TrackingPageView
+                  shipment={trackedShipment || shipments[0]}
+                  onSearch={handleTrackSearch}
+                  onPrintLabel={() => setSelectedLabelShipment(trackedShipment || shipments[0])}
+                  onOpenAdmin={handleManageDeliveriesClick}
+                  onUpdateDeliveryInstructions={(instr) => {
+                    const current = trackedShipment || shipments[0];
+                    if (current) {
+                      current.deliveryInstructions = instr;
+                      saveShipmentToStorage(current);
+                      setShipments(getStoredShipments());
+                      showToast('Courier delivery instructions recorded and saved.');
+                    }
+                  }}
+                />
+
                 {/* 4 Iconic FedEx Service Pillars with their Brand Colors */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {/* FedEx Express */}
@@ -528,17 +526,6 @@ export default function App() {
                 <LocationFinder />
               </div>
             )}
-
-            {activeTab === 'myshipments' && (
-              <div className="space-y-6">
-                <MyShipments
-                  shipments={shipments}
-                  onSelectShipment={(s) => setSelectedTrackingShipment(s)}
-                  onPrintLabel={(s) => setSelectedLabelShipment(s)}
-                  onCreateNew={() => setActiveTab('ship')}
-                />
-              </div>
-            )}
           </main>
         </>
       )}
@@ -572,10 +559,13 @@ export default function App() {
       )}
 
       {/* Footer */}
-      <Footer onSelectTab={(tab) => {
-        setIsAdminViewActive(false);
-        setActiveTab(tab);
-      }} />
+      <Footer
+        onSelectTab={(tab) => {
+          setIsAdminViewActive(false);
+          setActiveTab(tab);
+        }}
+        onManageDeliveries={handleManageDeliveriesClick}
+      />
     </div>
   );
 }
